@@ -1,7 +1,13 @@
+import { useEffect, useRef } from 'react';
 import { useExpenseStore } from '../store/expenseStore';
 
 export function InputBar() {
   const { input, setInput, addFromInput } = useExpenseStore();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -12,6 +18,7 @@ export function InputBar() {
     <form onSubmit={handleSubmit} className="mt-4">
       <input
         type="text"
+        ref={inputRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="type: 'coffee 15k' then press enter"
