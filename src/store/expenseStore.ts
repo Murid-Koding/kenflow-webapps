@@ -1,26 +1,26 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import {
   addTransaction,
   deleteTransaction,
   getTransactionsByDate,
   type Transaction,
-} from '../db/transactionDb';
+} from "../db/transactionDb";
 
 function getTodayDateKey(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
 function addDays(dateKey: string, offset: number): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
+  const [year, month, day] = dateKey.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   date.setDate(date.getDate() + offset);
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
@@ -28,16 +28,19 @@ function parseInput(raw: string): { name: string; amount: number } | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
-  const lastSpace = trimmed.lastIndexOf(' ');
+  const lastSpace = trimmed.lastIndexOf(" ");
   if (lastSpace === -1) return null;
 
   const name = trimmed.slice(0, lastSpace).trim();
-  const amountStr = trimmed.slice(lastSpace + 1).trim().toLowerCase();
+  const amountStr = trimmed
+    .slice(lastSpace + 1)
+    .trim()
+    .toLowerCase();
 
   if (!name || !amountStr) return null;
 
   let amount: number;
-  if (amountStr.endsWith('k')) {
+  if (amountStr.endsWith("k")) {
     const num = parseFloat(amountStr.slice(0, -1));
     if (isNaN(num)) return null;
     amount = Math.round(num * 1000);
@@ -60,22 +63,22 @@ export function formatAmount(value: number): string {
 
 export function getDateLabel(dateKey: string): string {
   const today = getTodayDateKey();
-  if (dateKey === today) return 'Hari ini';
-  if (dateKey === addDays(today, -1)) return 'Kemarin';
-  if (dateKey === addDays(today, 1)) return 'Besok';
+  if (dateKey === today) return "Hari ini";
+  if (dateKey === addDays(today, -1)) return "Kemarin";
+  if (dateKey === addDays(today, 1)) return "Besok";
 
-  const [y, m, d] = dateKey.split('-').map(Number);
+  const [y, m, d] = dateKey.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('id-ID', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
+  return date.toLocaleDateString("id-ID", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
   });
 }
 
 export function computeTrend(
   currentTotal: number,
-  prevTotal: number
+  prevTotal: number,
 ): string | null {
   if (currentTotal === 0 && prevTotal === 0) return null;
   if (prevTotal === 0) return null;
@@ -87,7 +90,7 @@ export function computeTrend(
   if (diff < 0) {
     return `Lebih hemat -${formatAmount(Math.abs(diff))}`;
   }
-  return 'Sama seperti kemarin';
+  return "Sama seperti kemarin";
 }
 
 interface ExpenseState {
@@ -101,6 +104,7 @@ interface ExpenseState {
   setInput: (val: string) => void;
   addFromInput: () => Promise<void>;
   removeTransaction: (id: number) => Promise<void>;
+  reorderTransactions: (newOrder: Transaction[]) => void;
   goToPrevDay: () => Promise<void>;
   goToNextDay: () => Promise<void>;
   isToday: () => boolean;
@@ -109,7 +113,7 @@ interface ExpenseState {
 const updateTrendFn = async (
   dateKey: string,
   cache: Record<string, Transaction[]>,
-  set: (partial: Partial<ExpenseState>) => void
+  set: (partial: Partial<ExpenseState>) => void,
 ) => {
   const prevKey = addDays(dateKey, -1);
   let prevTxs = cache[prevKey];
@@ -118,7 +122,10 @@ const updateTrendFn = async (
     prevTxs = await getTransactionsByDate(prevKey);
   }
 
-  const currentTotal = (cache[dateKey] ?? []).reduce((s, tx) => s + tx.amount, 0);
+  const currentTotal = (cache[dateKey] ?? []).reduce(
+    (s, tx) => s + tx.amount,
+    0,
+  );
   const prevTotal = prevTxs.reduce((s, tx) => s + tx.amount, 0);
   const text = computeTrend(currentTotal, prevTotal);
   set({ trendText: text });
@@ -126,7 +133,7 @@ const updateTrendFn = async (
 
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
   transactions: [],
-  input: '',
+  input: "",
   isLoading: false,
   selectedDateKey: getTodayDateKey(),
   cache: {},
@@ -135,7 +142,11 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   loadForDate: async (dateKey) => {
     const { cache } = get();
     if (cache[dateKey]) {
-      set({ transactions: cache[dateKey], selectedDateKey: dateKey, isLoading: false });
+      set({
+        transactions: cache[dateKey],
+        selectedDateKey: dateKey,
+        isLoading: false,
+      });
       await updateTrendFn(dateKey, cache, set);
       return;
     }
@@ -161,7 +172,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
 
     const now = Date.now();
 
-    const newTx: Omit<Transaction, 'id'> = {
+    const newTx: Omit<Transaction, "id"> = {
       name: parsed.name,
       amount: parsed.amount,
       createdAt: now,
@@ -176,10 +187,18 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       updateTrendFn(selectedDateKey, newCache, set);
       return {
         transactions: updated,
-        input: '',
+        input: "",
         cache: newCache,
       };
     });
+  },
+
+  reorderTransactions: (newOrder) => {
+    const { selectedDateKey } = get();
+    set((state) => ({
+      transactions: newOrder,
+      cache: { ...state.cache, [selectedDateKey]: newOrder },
+    }));
   },
 
   removeTransaction: async (id) => {

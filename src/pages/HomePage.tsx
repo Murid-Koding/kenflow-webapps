@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useExpenseStore, getDateLabel } from '../store/expenseStore';
-import { Header } from '../components/Header';
-import { SummaryCard } from '../components/SummaryCard';
-import { InputBar } from '../components/InputBar';
-import { TransactionItem } from '../components/TransactionItem';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Reorder } from "framer-motion";
+import { useExpenseStore, getDateLabel } from "../store/expenseStore";
+import { Header } from "../components/Header";
+import { SummaryCard } from "../components/SummaryCard";
+import { InputBar } from "../components/InputBar";
+import { TransactionItem } from "../components/TransactionItem";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export function HomePage() {
     trendText,
     loadForDate,
     removeTransaction,
+    reorderTransactions,
   } = useExpenseStore();
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function HomePage() {
   const dateLabel = getDateLabel(selectedDateKey);
 
   const handleDetail = () => {
-    const [year, month] = selectedDateKey.split('-').map(Number);
+    const [year, month] = selectedDateKey.split("-").map(Number);
     navigate(`/evaluation/${year}/${month}`);
   };
 
@@ -39,8 +41,8 @@ export function HomePage() {
         <div className="flex items-center gap-3 mt-2">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400">
-            {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}{' '}
-            · {dateLabel}
+            {transactions.length} transaction
+            {transactions.length !== 1 ? "s" : ""} · {dateLabel}
           </span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
@@ -54,7 +56,13 @@ export function HomePage() {
             <p className="text-sm text-gray-400">No expenses yet.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <Reorder.Group
+            axis="y"
+            values={transactions}
+            onReorder={reorderTransactions}
+            className="flex flex-col gap-2"
+            style={{ listStyle: "none", padding: 0, margin: 0 }}
+          >
             {transactions.map((tx) => (
               <TransactionItem
                 key={tx.id}
@@ -62,7 +70,7 @@ export function HomePage() {
                 onRemove={removeTransaction}
               />
             ))}
-          </div>
+          </Reorder.Group>
         )}
 
         <div className="h-8" />
