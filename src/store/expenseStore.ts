@@ -108,6 +108,7 @@ interface ExpenseState {
   goToPrevDay: () => Promise<void>;
   goToNextDay: () => Promise<void>;
   isToday: () => boolean;
+  refreshAfterImport: () => Promise<void>;
 }
 
 const updateTrendFn = async (
@@ -230,5 +231,11 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   isToday: () => {
     const { selectedDateKey } = get();
     return selectedDateKey === getTodayDateKey();
+  },
+
+  refreshAfterImport: async () => {
+    const { selectedDateKey } = get();
+    set({ cache: {} });
+    await get().loadForDate(selectedDateKey);
   },
 }));

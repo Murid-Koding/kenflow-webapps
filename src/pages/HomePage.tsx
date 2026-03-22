@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Reorder } from "framer-motion";
 import { useExpenseStore, getDateLabel } from "../store/expenseStore";
@@ -6,6 +6,7 @@ import { Header } from "../components/Header";
 import { SummaryCard } from "../components/SummaryCard";
 import { InputBar } from "../components/InputBar";
 import { TransactionItem } from "../components/TransactionItem";
+import { importDataFromFile } from "../utils/dataTransfer";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -17,7 +18,10 @@ export function HomePage() {
     loadForDate,
     removeTransaction,
     reorderTransactions,
+    refreshAfterImport,
   } = useExpenseStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     loadForDate(selectedDateKey);
@@ -29,6 +33,38 @@ export function HomePage() {
   const handleDetail = () => {
     const [year, month] = selectedDateKey.split("-").map(Number);
     navigate(`/evaluation/${year}/${month}`);
+  };
+
+  const handleImportTrigger = () => {
+    if (isImporting) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (
+      !window.confirm(
+        "Import data akan menggantikan seluruh catatan saat ini. Lanjutkan?",
+      )
+    ) {
+      input.value = "";
+      return;
+    }
+    try {
+      setIsImporting(true);
+      const count = await importDataFromFile(file);
+      await refreshAfterImport();
+      alert(`Berhasil mengimpor ${count} transaksi.`);
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Gagal mengimpor data.";
+      alert(message);
+    } finally {
+      setIsImporting(false);
+      input.value = "";
+    }
   };
 
   return (
@@ -72,6 +108,43 @@ export function HomePage() {
             ))}
           </Reorder.Group>
         )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        <div className="mt-24 flex justify-center">
+          <button
+            type="button"
+            onClick={handleImportTrigger}
+            disabled={isImporting}
+            className={`inline-flex items-center gap-2 text-sm lowercase text-gray-900/25 transition ${
+              isImporting ? 'cursor-wait' : 'hover:text-gray-900/60'
+            }`}
+            aria-label="Import data"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v9" />
+              <path d="M8 10l4 4 4-4" />
+              <path d="M6 18h12" />
+            </svg>
+            {isImporting ? "importing" : "import data"}
+          </button>
+        </div>
 
         <div className="h-8" />
       </div>

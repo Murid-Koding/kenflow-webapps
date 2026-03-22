@@ -51,3 +51,20 @@ export async function deleteTransaction(id: number): Promise<void> {
   const db = await getDb();
   return db.delete(STORE_NAME, id);
 }
+
+export async function getAllTransactions(): Promise<Transaction[]> {
+  const db = await getDb();
+  return db.getAll(STORE_NAME);
+}
+
+export async function replaceAllTransactions(transactions: Transaction[]): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
+  await store.clear();
+  for (const item of transactions) {
+    const { id, ...rest } = item;
+    await store.add(rest);
+  }
+  await tx.done;
+}
