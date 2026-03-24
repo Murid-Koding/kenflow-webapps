@@ -53,3 +53,33 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #f9fafb;
 }
+
+.doodle-surface {
+  background-image: radial-gradient(circle at 1px 1px, rgba(248, 113, 113, 0.12) 1.4px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.doodle-scribble {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.35;
+  filter: drop-shadow(-3px 3px 0 rgba(17, 24, 39, 0.25));
+}
+
+.doodle-scribble--peach {
+  color: #fb7185;
+  width: 140px;
+  height: 140px;
+  top: -40px;
+  right: -30px;
+}
+
+.doodle-scribble--mint {
+  color: #34d399;
+  width: 90px;
+  height: 90px;
+  bottom: -30px;
+  left: -20px;
+}

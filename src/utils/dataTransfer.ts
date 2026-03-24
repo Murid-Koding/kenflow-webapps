@@ -18,8 +18,20 @@ function buildFilename(): string {
   return `finance-tracker-data-${year}${month}${day}.json`;
 }
 
-export async function exportData(): Promise<void> {
-  const items = await getAllTransactions();
+async function fetchAllTransactions(): Promise<Transaction[]> {
+  return getAllTransactions();
+}
+
+export async function getExportCount(): Promise<number> {
+  const items = await fetchAllTransactions();
+  return items.length;
+}
+
+export async function exportData(): Promise<number> {
+  const items = await fetchAllTransactions();
+  if (items.length === 0) {
+    return 0;
+  }
   const payload: ExportPayload = {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -34,6 +46,7 @@ export async function exportData(): Promise<void> {
   anchor.download = buildFilename();
   anchor.click();
   URL.revokeObjectURL(url);
+  return items.length;
 }
 
 function sanitizeItems(raw: unknown): Transaction[] {
